@@ -16,8 +16,8 @@ docker build --build-arg="USERID=$(id -u)" \
     --build-arg="USERNAME=$USER" \
     --build-arg="REPO_DIR=$(pwd)" \
     --no-cache \
-    -t $USER/${project_name}_pyg:24.07-py3 .
-docker run -it -d -h $(hostname)_docker --name ${project_name}_$USER \
+    -t $USER/${project_name}_pyg:24.05-py3 .
+docker run -it -d -h $(hostname)_docker --name ${project_name}_${USER}_24.05 \
     --gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 \
     -u $(id -u):$(id -g) \
     -v /home/$USER:/home/$USER \
@@ -25,4 +25,4 @@ docker run -it -d -h $(hostname)_docker --name ${project_name}_$USER \
     -v $basedir/$USER/tmp:/tmp/ray \
     -v /mnt:/mnt \
     -w /home/$USER/ \
-    $USER/${project_name}_pyg:24.07-py3 bash
+    $USER/${project_name}_pyg:24.05-py3 bash

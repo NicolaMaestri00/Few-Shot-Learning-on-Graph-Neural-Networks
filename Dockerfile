@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/pyg:24.07-py3
+FROM nvcr.io/nvidia/pyg:24.05-py3
 
 # REPO_DIR contains the path of the repo inside the container, which is 
 # expected to be mounted inside and not copied (this is a dev env)

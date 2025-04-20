@@ -18,6 +18,7 @@ maintainers = [
     { name = "Nicola Maestri", email = "nicola.maestri@studenti.unitn.it" },
 ]
 dependencies = [
+  "lightning == 2.4.0",
 ]
 
 [tool.black]
