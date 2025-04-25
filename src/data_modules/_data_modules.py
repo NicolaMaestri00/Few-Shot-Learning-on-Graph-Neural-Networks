@@ -1,11 +1,12 @@
 '''    Data Module    '''
 
 import torch
+import torch_geometric
 from torch_geometric.datasets import Planetoid, Coauthor, Amazon
 from torch_geometric.transforms import NormalizeFeatures, Compose, RandomNodeSplit
 
 
-def get_data(dataset_name: str, samples_per_class: list):
+def get_data(dataset_name: str, samples_per_class: list, device: torch.device) -> tuple:
         """Get graph"""
         if dataset_name in ['Cora', 'CiteSeer', 'PubMed']:
             dataset = Planetoid(root='data/Planetoid', name=dataset_name, transform=NormalizeFeatures())
@@ -26,15 +27,16 @@ def get_data(dataset_name: str, samples_per_class: list):
             data = dataset[0]
         else:
             raise ValueError(f"Unknown dataset: {dataset_name}. Supported datasets are: Cora, CiteSeer, PubMed, CS, Physics, Amazon Computers.")
-        
+        data = data.to(device)
         shots = []
-        for n_shots in samples_per_class:
-            train_mask = extract_training_mask(data, n_shots)
-            shots.append((n_shots, train_mask))
+        for n_per_class in samples_per_class:
+            train_mask = extract_training_mask(data, n_per_class, device)
+            shots.append((n_per_class, train_mask))
+        
         return data, shots
 
 
-def extract_training_mask(data, n_per_class):
+def extract_training_mask(data: torch_geometric.data.Data, n_per_class: int, device: torch.device) -> torch.Tensor:
     """
     Training mask extractor:
     Creates a new training mask for node classification with a fixed number of samples
@@ -68,5 +70,6 @@ def extract_training_mask(data, n_per_class):
 
         # Update the new training mask for these indices
         new_train_mask[selected] = True
+        new_train_mask = new_train_mask.to(device)
 
     return new_train_mask
