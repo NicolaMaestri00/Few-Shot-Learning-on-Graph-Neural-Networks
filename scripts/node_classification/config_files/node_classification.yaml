@@ -1,15 +1,15 @@
 data:
-  dataset_name: "CiteSeer"            # ['Cora', 'CiteSeer', 'PubMed', 'CS', 'Physics', 'Amazon Computers']
-  samples_per_class: [5, 10, 20, 40, 60, 80]
+  dataset_name: "Cora"            # ['Cora', 'CiteSeer', 'PubMed', 'CS', 'Physics', 'Amazon Computers']
+  samples_per_class: [5, 10]
 
-results_path: "/home/nicolamaestri/nm_gnn/scripts/node_classification/results/CiteSeer"
+results_path: "/home/nicolamaestri/nm_gnn/scripts/node_classification/results/Cora"
 
 model:
   hidden_channels: 128
   drop_msg: 0.9
-  drop_node: 0.5
-  drop_edge: 0.5
-  drop_attr: 0.5
+  DropNode: 0.5
+  DropEdge: 0.5
+  DropAttributes: 0.5
   augm: 0.1
   rew: 0.1
 
@@ -17,7 +17,7 @@ optimizer:
   lr: 0.01
   weight_decay: 0.0005
 
-n_runs: 10
+n_runs: 2
 
 training:
   epochs: 500
