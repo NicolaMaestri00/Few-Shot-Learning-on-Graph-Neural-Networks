@@ -1,8 +1,0 @@
-Method,FS5,FS10
-Baseline,90.65,92.6
-CSR,89.2,93.8
-ER,90.4,92.85
-DropMessage,90.75,92.6
-DropNode,89.95,92.25
-DropEdge,89.85,92.8
-DropAttributes,90.8,92.25
