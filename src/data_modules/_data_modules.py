@@ -1,4 +1,7 @@
-'''    Data Module    '''
+"""
+Data Module - Handles loading and preprocessing of graph datasets
+for node classification tasks.
+"""
 
 import torch
 import torch_geometric
@@ -41,35 +44,33 @@ def extract_training_mask(data: torch_geometric.data.Data, n_per_class: int, dev
     Training mask extractor:
     Creates a new training mask for node classification with a fixed number of samples
     """
-    new_train_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
+    new_train_mask = torch.zeros(data.num_nodes, dtype=torch.bool, device=device)  # Create directly on device
     num_classes = int(data.y.max().item()) + 1
-
+    
     for c in range(num_classes):
         class_indices = (data.y == c).nonzero(as_tuple=False).view(-1)
-
         # 1. Use up to the nodes already in the train_mask
         default_train_indices = class_indices[data.train_mask[class_indices]]
         n_default = min(20, n_per_class)
         selected = default_train_indices[:n_default]
-
+        
         # 2. If additional nodes are needed, add nodes that are not in val or test
         if selected.numel() < n_per_class:
             # Candidate nodes: all nodes of class c not in val and not in test
             candidate_mask = ~(data.val_mask | data.test_mask)
             candidate_indices = class_indices[candidate_mask[class_indices]]
-
             # Exclude any that have already been selected
             already_selected = set(selected.tolist())
             additional_candidates = [idx for idx in candidate_indices.tolist() if idx not in already_selected]
-            additional_candidates = torch.tensor(additional_candidates, dtype=torch.long)
-
+            # Create tensor on the same device as selected
+            additional_candidates = torch.tensor(additional_candidates, dtype=torch.long, device=device)
+            
             # Number of additional nodes needed
             num_to_add = n_per_class - selected.numel()
             if additional_candidates.numel() > 0:
                 selected = torch.cat([selected, additional_candidates[:num_to_add]])
-
+                
         # Update the new training mask for these indices
         new_train_mask[selected] = True
-        new_train_mask = new_train_mask.to(device)
-
-    return new_train_mask
+        
+    return new_train_mask  # Already on the right device

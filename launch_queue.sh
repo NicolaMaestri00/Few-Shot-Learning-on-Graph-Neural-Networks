@@ -11,8 +11,9 @@ fi
 # Extract the script name from the full path
 script_name=$(basename "$1")
 script_dir=$(dirname "$1")
+project_name=nm_gnn
 
 # Attach to Docker container | UPDATE docker path
 # NOTE: CHANGE THE DOCKER CONTAINER NAME ACCORDING TO YOUR WORKING CONTAINER (i.e., lightning_templ_$USER)
-docker restart ${project_name}_$USER
-docker exec ${project_name}_$USER bash -c "cd $script_dir && python $script_name --conf config_files/${script_name%.py}.yaml"
+docker restart ${project_name}_${USER}_24.05
+docker exec ${project_name}_${USER}_24.05 bash -c "cd $script_dir && python $script_name --conf config_files/${script_name%.py}.yaml"

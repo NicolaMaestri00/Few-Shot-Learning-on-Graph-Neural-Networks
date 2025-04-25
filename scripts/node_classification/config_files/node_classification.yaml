@@ -1,8 +1,8 @@
 data:
-  dataset_name: "Physics"            # ['Cora', 'CiteSeer', 'PubMed', 'CS', 'Physics', 'Amazon Computers']
-  samples_per_class: [5, 10]
+  dataset_name: "CiteSeer"            # ['Cora', 'CiteSeer', 'PubMed', 'CS', 'Physics', 'Amazon Computers']
+  samples_per_class: [5, 10, 20, 40, 60, 80]
 
-results_path: "/home/nicolamaestri/nm_gnn/scripts/node_classification/results/Physics"
+results_path: "/home/nicolamaestri/nm_gnn/scripts/node_classification/results/CiteSeer"
 
 model:
   hidden_channels: 128
@@ -17,7 +17,7 @@ optimizer:
   lr: 0.01
   weight_decay: 0.0005
 
-n_runs: 2
+n_runs: 10
 
 training:
   epochs: 500
