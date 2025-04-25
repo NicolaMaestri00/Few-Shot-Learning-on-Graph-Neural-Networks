@@ -28,18 +28,18 @@ if __name__ == "__main__":
     functions.reg_baseline(config, data, shots, device, results_path=config["results_path"], er=True)     # Entropy Regularization
 
     # Augmentation Strategies
-    functions.drop_message(config, data, shots, device, results_path=config["results_path"])        # DropMessage
-    functions.drop_node(config, data, shots, device, results_path=config["results_path"])           # DropNode
-    functions.drop_edge(config, data, shots, device, results_path=config["results_path"])           # DropEdge
-    functions.drop_attributes(config, data, shots, device, results_path=config["results_path"])     # DropAttributes
-    functions.augmentation(config, data, shots, device, results_path=config["results_path"])        # Augmentation
-    functions.rewiring(config, data, shots, device, results_path=config["results_path"])            # Rewiring
+    functions.drop_message(config, data, shots, device, results_path=config["results_path"])                # DropMessage
+    functions.dropout(config, data, shots, device, "DropNode", results_path=config["results_path"])         # DropNode
+    functions.dropout(config, data, shots, device, "DropEdge", results_path=config["results_path"])         # DropEdge
+    functions.dropout(config, data, shots, device, "DropAttributes", results_path=config["results_path"])   # DropAttributes
+    functions.augmentation(config, data, shots, device, results_path=config["results_path"])                # Augmentation
+    functions.rewiring(config, data, shots, device, results_path=config["results_path"])                    # Rewiring
 
     # Pre-training and Fine-tuning
     functions.graphcl(config, data, shots, device, results_path=config["results_path"])        # GraphCL
 
     # Prototypical Networks
-    functions.protonet(config, data, shots, device, results_path=config["results_path"])        # Prototypical Networks
+    functions.protonet(config, data, shots, device, results_path=config["results_path"])       # Prototypical Networks
 
     # Siamese Networks
     functions.siamesenet(config, data, shots, device, results_path=config["results_path"], CL_Loss='PW')        # Pairwise Loss
