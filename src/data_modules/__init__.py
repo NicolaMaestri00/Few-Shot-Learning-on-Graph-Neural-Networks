@@ -1,6 +1,6 @@
-from ._data_modules import get_data, get_graphs
+from ._data_modules import *
 
 __all__ = [
-    "get_data",
-    "get_graphs"
+    "nc_get_data",
+    "gc_get_data"
 ]

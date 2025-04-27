@@ -1,11 +1,12 @@
 data:
-  dataset_name: "ENZYMES"            # ['MUTAG', 'PROTEINS', 'ENZYMES', 'NCI1', 'NCI109', 'DD']
+  dataset_name: "MUTAG"            # ['MUTAG', 'PROTEINS', 'ENZYMES', 'NCI1', 'NCI109', 'DD']
   samples_per_class: [5, 10]
 
-results_path: "/home/nicolamaestri/nm_gnn/scripts/graph_classification/results/ENZYMES"
+results_path: "/home/nicolamaestri/nm_gnn/scripts/graph_classification/results/MUTAG"
 
 model:
   hidden_channels: 64
+  dropout: 0.5
   drop_msg: 0.9
   DropNode: 0.5
   DropEdge: 0.5

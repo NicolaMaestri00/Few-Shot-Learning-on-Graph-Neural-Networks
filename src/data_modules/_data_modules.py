@@ -1,7 +1,4 @@
-"""
-Data Module - Handles loading and preprocessing of graph datasets
-for node classification tasks.
-"""
+"""    Data Module    """
 
 import random
 
@@ -11,36 +8,6 @@ from torch.utils.data import Dataset
 from torch_geometric.datasets import Amazon, Coauthor, Planetoid, TUDataset
 from torch_geometric.loader import DataLoader
 from torch_geometric.transforms import NormalizeFeatures, Compose, RandomNodeSplit
-
-
-def get_data(dataset_name: str, samples_per_class: list, device: torch.device) -> tuple:
-        """Get graph"""
-        if dataset_name in ['Cora', 'CiteSeer', 'PubMed']:
-            dataset = Planetoid(root='data/Planetoid', name=dataset_name, transform=NormalizeFeatures())
-            data = dataset[0]
-        elif dataset_name in ['CS', 'Physics']:
-            transform = Compose([
-                NormalizeFeatures(),
-                RandomNodeSplit(split='random', num_train_per_class=20, num_val=500, num_test=1000)
-            ])
-            dataset = Coauthor(root='data/Coauthor', name=dataset_name, transform=transform)
-            data = dataset[0]
-        elif dataset_name == 'Amazon Computers':
-            transform = Compose([
-                NormalizeFeatures(),
-                RandomNodeSplit(split='random', num_train_per_class=20, num_val=500, num_test=1000)
-            ])
-            dataset = Amazon(root='data/Amazon', name='Computers', transform=transform)
-            data = dataset[0]
-        else:
-            raise ValueError(f"Unknown dataset: {dataset_name}. Supported datasets are: Cora, CiteSeer, PubMed, CS, Physics, Amazon Computers.")
-        data = data.to(device)
-        shots = []
-        for n_per_class in samples_per_class:
-            train_mask = extract_training_mask(data, n_per_class, device)
-            shots.append((n_per_class, train_mask))
-        
-        return data, shots
 
 
 def extract_training_mask(data: torch_geometric.data.Data, n_per_class: int, device: torch.device) -> torch.Tensor:
@@ -78,6 +45,37 @@ def extract_training_mask(data: torch_geometric.data.Data, n_per_class: int, dev
         new_train_mask[selected] = True
         
     return new_train_mask  # Already on the right device
+
+
+def nc_get_data(dataset_name: str, samples_per_class: list, device: torch.device) -> tuple:
+        """ Node Classification Dataset Loader """
+
+        if dataset_name in ['Cora', 'CiteSeer', 'PubMed']:
+            dataset = Planetoid(root='data/Planetoid', name=dataset_name, transform=NormalizeFeatures())
+            data = dataset[0]
+        elif dataset_name in ['CS', 'Physics']:
+            transform = Compose([
+                NormalizeFeatures(),
+                RandomNodeSplit(split='random', num_train_per_class=20, num_val=500, num_test=1000)
+            ])
+            dataset = Coauthor(root='data/Coauthor', name=dataset_name, transform=transform)
+            data = dataset[0]
+        elif dataset_name == 'Amazon Computers':
+            transform = Compose([
+                NormalizeFeatures(),
+                RandomNodeSplit(split='random', num_train_per_class=20, num_val=500, num_test=1000)
+            ])
+            dataset = Amazon(root='data/Amazon', name='Computers', transform=transform)
+            data = dataset[0]
+        else:
+            raise ValueError(f"Unknown dataset: {dataset_name}. Supported datasets are: Cora, CiteSeer, PubMed, CS, Physics, Amazon Computers.")
+        data = data.to(device)
+        shots = []
+        for n_per_class in samples_per_class:
+            train_mask = extract_training_mask(data, n_per_class, device)
+            shots.append((n_per_class, train_mask))
+        
+        return data, shots
 
 
 class TripletDataset(Dataset):
@@ -122,7 +120,8 @@ def few_shot_sampler(dataset, needed_per_class):
     return sampled_subset, remaining_dataset
 
 
-def get_graphs(dataset_name: str, samples_per_class: list, device: torch.device) -> tuple:
+def gc_get_data(dataset_name: str, samples_per_class: list, device: torch.device) -> tuple:
+    """ Graph Classification Dataset Loader """
 
     dataset = TUDataset(root='data/TUDataset', name=dataset_name)
     in_channels = dataset.num_node_features
