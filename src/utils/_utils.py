@@ -11,6 +11,7 @@ import torch
 import torch.nn.functional as F
 import yaml
 from sklearn.metrics import f1_score
+from torch_geometric.data import Batch
 
 import losses
 
@@ -61,7 +62,7 @@ def save_dfs(dfs:list=[], file_path:str='./', file_names:list=[]) -> None:
         df.to_csv(f'{file_path}/{file_name}.csv', index=False)
 
 
-def train_step(model, data, train_mask, optimizer, lambda_entropy=0):
+def nc_train_step(model, data, train_mask, optimizer, lambda_entropy=0):
     ''' Training step: yields average loss over batch. '''
     model.train()
     optimizer.zero_grad()
@@ -74,7 +75,7 @@ def train_step(model, data, train_mask, optimizer, lambda_entropy=0):
     return loss.item()
 
 
-def test(model, data, test_mask):
+def nc_test(model, data, test_mask):
     ''' Evaluation step: yields test accuracy and F1 score. '''
     model.eval()
     _, out = model(data.x, data.edge_index)
@@ -86,7 +87,7 @@ def test(model, data, test_mask):
     return test_acc, test_f1, y_pred, y_true
 
 
-def training(model, data, train_mask, val_mask, optimizer, epochs=100, patience=50, lambda_entropy=0):
+def nc_training(model, data, train_mask, val_mask, optimizer, epochs=100, patience=50, lambda_entropy=0):
     ''' Training function '''
     rec_df = pd.DataFrame(columns=['train_loss', 'val_acc', 'val_f1'])
     best_score = 0
@@ -94,8 +95,8 @@ def training(model, data, train_mask, val_mask, optimizer, epochs=100, patience=
     best_model_state = None
 
     for epoch in range(1, epochs+1):
-        train_loss = train_step(model, data, train_mask, optimizer, lambda_entropy)
-        val_acc, val_f1, _, _ = test(model, data, val_mask)
+        train_loss = nc_train_step(model, data, train_mask, optimizer, lambda_entropy)
+        val_acc, val_f1, _, _ = nc_test(model, data, val_mask)
         rec_df.loc[len(rec_df)] = [train_loss, val_acc, val_f1]
         if val_acc + val_f1 > best_score:
             best_score = val_acc + val_f1
@@ -120,7 +121,7 @@ def augment_graph(graph, n=1, device='cpu'):
     return graph_clone
 
 
-def train_step_augm(model, data, train_mask, optimizer, device, lambda_entropy=0, augm=0.1):
+def nc_train_step_augm(model, data, train_mask, optimizer, device, lambda_entropy=0, augm=0.1):
     ''' Training step: yields average loss over batch. '''
     model.train()
     optimizer.zero_grad()
@@ -134,7 +135,7 @@ def train_step_augm(model, data, train_mask, optimizer, device, lambda_entropy=0
     return loss.item()
 
 
-def training_augm(model, data, train_mask, val_mask, optimizer, epochs=100, patience=50, device='cpu', lambda_entropy=0, augm=0.1):
+def nc_training_augm(model, data, train_mask, val_mask, optimizer, epochs=100, patience=50, device='cpu', lambda_entropy=0, augm=0.1):
     ''' Training function '''
     rec_df = pd.DataFrame(columns=['train_loss', 'val_acc', 'val_f1'])
     best_score = 0
@@ -142,8 +143,8 @@ def training_augm(model, data, train_mask, val_mask, optimizer, epochs=100, pati
     best_model_state = None
 
     for epoch in range(1, epochs+1):
-        train_loss = train_step_augm(model, data, train_mask, optimizer, device, lambda_entropy, augm)
-        val_acc, val_f1, _, _ = test(model, data, val_mask)
+        train_loss = nc_train_step_augm(model, data, train_mask, optimizer, device, lambda_entropy, augm)
+        val_acc, val_f1, _, _ = nc_test(model, data, val_mask)
         rec_df.loc[len(rec_df)] = [train_loss, val_acc, val_f1]
         if val_acc + val_f1 > best_score:
             best_score = val_acc + val_f1
@@ -159,7 +160,7 @@ def training_augm(model, data, train_mask, val_mask, optimizer, epochs=100, pati
     return rec_df
 
 
-def rewire_graph(graph, p=0.4):
+def nc_rewire_graph(graph, p=0.4):
     graph_clone = graph.clone()
     edge_index = graph_clone.edge_index
     nodes_a, nodes_b = edge_index
@@ -202,11 +203,11 @@ def rewire_graph(graph, p=0.4):
     return graph_clone
 
 
-def train_step_rew(model, data, train_mask, optimizer, lambda_entropy=0, rew=0.1):
+def nc_train_step_rew(model, data, train_mask, optimizer, lambda_entropy=0, rew=0.1):
     ''' Training step: yields average loss over batch. '''
     model.train()
     optimizer.zero_grad()
-    data = rewire_graph(data, rew)
+    data = nc_rewire_graph(data, rew)
     _, out = model(data.x, data.edge_index)
     loss = F.cross_entropy(out[train_mask], data.y[train_mask])
     if lambda_entropy:
@@ -216,7 +217,7 @@ def train_step_rew(model, data, train_mask, optimizer, lambda_entropy=0, rew=0.1
     return loss.item()
 
 
-def training_rew(model, data, train_mask, val_mask, optimizer, epochs=100, patience=50, lambda_entropy=0, rew=0.1):
+def nc_training_rew(model, data, train_mask, val_mask, optimizer, epochs=100, patience=50, lambda_entropy=0, rew=0.1):
     ''' Training function '''
     rec_df = pd.DataFrame(columns=['train_loss', 'val_acc', 'val_f1'])
     best_score = 0
@@ -224,8 +225,8 @@ def training_rew(model, data, train_mask, val_mask, optimizer, epochs=100, patie
     best_model_state = None
 
     for epoch in range(1, epochs+1):
-        train_loss = train_step_rew(model, data, train_mask, optimizer, lambda_entropy, rew)
-        val_acc, val_f1, _, _ = test(model, data, val_mask)
+        train_loss = nc_train_step_rew(model, data, train_mask, optimizer, lambda_entropy, rew)
+        val_acc, val_f1, _, _ = nc_test(model, data, val_mask)
         rec_df.loc[len(rec_df)] = [train_loss, val_acc, val_f1]
         if val_acc + val_f1 > best_score:
             best_score = val_acc + val_f1
@@ -241,7 +242,7 @@ def training_rew(model, data, train_mask, val_mask, optimizer, epochs=100, patie
     return rec_df
 
 
-def get_anch_pos_neg_idx(graph, train_mask):
+def nc_get_anch_pos_neg_idx(graph, train_mask):
     # Use torch.nonzero to get indices of True values in train_mask
     anchors_idx = torch.nonzero(train_mask, as_tuple=True)[0].tolist()
     # Get labels of anchors (assuming graph.y is a tensor)
@@ -275,12 +276,12 @@ def get_anch_pos_neg_idx(graph, train_mask):
     return anchors_idx, positives_idx, negatives_idx
 
 
-def train_step_protonet(model, data, train_mask, optimizer):
+def nc_train_step_protonet(model, data, train_mask, optimizer):
     model.train()
     optimizer.zero_grad()
     emb, _ = model(data.x, data.edge_index)
 
-    anchors_idx, positives_idx, negatives_idx = get_anch_pos_neg_idx(data, train_mask)
+    anchors_idx, positives_idx, negatives_idx = nc_get_anch_pos_neg_idx(data, train_mask)
     anchors_emb = emb[anchors_idx]
     positives_emb = emb[positives_idx]
     negatives_emb = emb[negatives_idx]
@@ -292,7 +293,7 @@ def train_step_protonet(model, data, train_mask, optimizer):
     return loss.item()
 
 
-def get_prototypes(model, graph, test_mask):
+def nc_get_prototypes(model, graph, test_mask):
     model.eval()
     prototypes = {}
     with torch.no_grad():
@@ -308,7 +309,7 @@ def get_prototypes(model, graph, test_mask):
     return prototypes
 
 
-def test_protonet(model, graph, test_mask, prototypes):
+def nc_test_protonet(model, graph, test_mask, prototypes):
     model.eval()
     with torch.no_grad():
         emb, _ = model(graph.x, graph.edge_index)
@@ -331,16 +332,16 @@ def test_protonet(model, graph, test_mask, prototypes):
     return accuracy, f1, test_lab, y_pred
 
 
-def training_protonet(model, data, train_mask, val_mask, optimizer, epochs=100, patience=50):
+def nc_training_protonet(model, data, train_mask, val_mask, optimizer, epochs=100, patience=50):
     rec_df = pd.DataFrame(columns=['train_loss', 'val_acc', 'val_f1'])
     best_score = 0
     no_improvements = 0
     best_model_state = None  # Keep best model state in memory
 
     for epoch in range(1, epochs+1):
-        train_loss = train_step_protonet(model, data, train_mask, optimizer)
-        prototypes = get_prototypes(model, data, val_mask)
-        val_acc, val_f1, _, _ = test_protonet(model, data, val_mask, prototypes)
+        train_loss = nc_train_step_protonet(model, data, train_mask, optimizer)
+        prototypes = nc_get_prototypes(model, data, val_mask)
+        val_acc, val_f1, _, _ = nc_test_protonet(model, data, val_mask, prototypes)
         rec_df.loc[len(rec_df)] = [train_loss, val_acc, val_f1]
 
         if val_acc + val_f1 > best_score:
@@ -357,13 +358,13 @@ def training_protonet(model, data, train_mask, val_mask, optimizer, epochs=100, 
     return rec_df
 
 
-def train_step_siamesenet_PW(model, data, train_mask, optimizer, lambda_entropy=0, augm=False, device='cpu'):
+def nc_train_step_siamesenet_PW(model, data, train_mask, optimizer, lambda_entropy=0, augm=False, device='cpu'):
     ''' Training step: yields average loss over batch. '''
     model.train()
     optimizer.zero_grad()
-    if augm: data = rewire_graph(data, 0.1)
+    if augm: data = nc_rewire_graph(data, 0.1)
     emb, out = model(data.x, data.edge_index)
-    anchors_idx, positives_idx, negatives_idx = get_anch_pos_neg_idx(data, train_mask)
+    anchors_idx, positives_idx, negatives_idx = nc_get_anch_pos_neg_idx(data, train_mask)
     anchors_emb = emb[anchors_idx]
     positives_emb = emb[positives_idx]
     negatives_emb = emb[negatives_idx]
@@ -380,13 +381,13 @@ def train_step_siamesenet_PW(model, data, train_mask, optimizer, lambda_entropy=
     return loss.item()
 
 
-def train_step_siamesenet_TPL(model, data, train_mask, optimizer, lambda_entropy=0, augm=False):
+def nc_train_step_siamesenet_TPL(model, data, train_mask, optimizer, lambda_entropy=0, augm=False):
     ''' Training step: yields average loss over batch. '''
     model.train()
     optimizer.zero_grad()
-    if augm: data = rewire_graph(data, 0.1)
+    if augm: data = nc_rewire_graph(data, 0.1)
     emb, out = model(data.x, data.edge_index)
-    anchors_idx, positives_idx, negatives_idx = get_anch_pos_neg_idx(data, train_mask)
+    anchors_idx, positives_idx, negatives_idx = nc_get_anch_pos_neg_idx(data, train_mask)
     anchors_emb = emb[anchors_idx]
     positives_emb = emb[positives_idx]
     negatives_emb = emb[negatives_idx]
@@ -400,7 +401,7 @@ def train_step_siamesenet_TPL(model, data, train_mask, optimizer, lambda_entropy
     return loss.item()
 
 
-def training_siamesenet(model, data, train_mask, val_mask, optimizer, epochs=100, patience=50, CL_Loss='TPL', lambda_entropy=0, device='cpu'):
+def nc_training_siamesenet(model, data, train_mask, val_mask, optimizer, epochs=100, patience=50, CL_Loss='TPL', lambda_entropy=0, device='cpu'):
     ''' Training function '''
     rec_df = pd.DataFrame(columns=['train_loss', 'val_acc', 'val_f1'])
     best_score = 0
@@ -408,19 +409,19 @@ def training_siamesenet(model, data, train_mask, val_mask, optimizer, epochs=100
     best_model_state = None
 
     for epoch in range(1, epochs+1):
-        train_loss = train_step(model, data, train_mask, optimizer, lambda_entropy)
+        train_loss = nc_train_step(model, data, train_mask, optimizer, lambda_entropy)
         if CL_Loss == 'PW':
-            train_loss = train_step_siamesenet_PW(model, data, train_mask, optimizer, lambda_entropy, device=device)
+            train_loss = nc_train_step_siamesenet_PW(model, data, train_mask, optimizer, lambda_entropy, device=device)
         elif CL_Loss == 'PW_A':
-            train_loss = train_step_siamesenet_PW(model, data, train_mask, optimizer, lambda_entropy, augm=True, device=device)
+            train_loss = nc_train_step_siamesenet_PW(model, data, train_mask, optimizer, lambda_entropy, augm=True, device=device)
         elif CL_Loss == 'TPL':
-            train_loss = train_step_siamesenet_TPL(model, data, train_mask, optimizer, lambda_entropy)
+            train_loss = nc_train_step_siamesenet_TPL(model, data, train_mask, optimizer, lambda_entropy)
         elif CL_Loss == 'TPL_A':
-            train_loss = train_step_siamesenet_TPL(model, data, train_mask, optimizer, lambda_entropy, augm=True)
+            train_loss = nc_train_step_siamesenet_TPL(model, data, train_mask, optimizer, lambda_entropy, augm=True)
         else:
             raise ValueError(f'Invalid CL_Loss: {CL_Loss} not in [PW, PW_A, TPL, TPL_A]')
 
-        val_acc, val_f1, _, _ = test(model, data, val_mask)
+        val_acc, val_f1, _, _ = nc_test(model, data, val_mask)
         rec_df.loc[len(rec_df)] = [train_loss, val_acc, val_f1]
         if val_acc + val_f1 > best_score:
             best_score = val_acc + val_f1
@@ -436,14 +437,14 @@ def training_siamesenet(model, data, train_mask, val_mask, optimizer, epochs=100
     return rec_df
 
 
-def pretrain_graphcl(model, data, train_mask, optimizer, epochs=100):
+def nc_pretrain_graphcl(model, data, train_mask, optimizer, epochs=100):
     """ Pre-training function for Graph Contrastive Learning (GraphCL). """
     model.train()
 
     for epoch in range(1, epochs + 1):
         optimizer.zero_grad()
         with torch.no_grad():
-            data_1 = rewire_graph(data, p=0.2)
+            data_1 = nc_rewire_graph(data, p=0.2)
         emb1, _ = model(data.x, data.edge_index)
         emb2, _ = model(data_1.x, data_1.edge_index)
         loss = losses.nt_xent_loss(emb1[train_mask], emb2[train_mask], tau=0.5)
@@ -451,20 +452,7 @@ def pretrain_graphcl(model, data, train_mask, optimizer, epochs=100):
         optimizer.step()
 
 
-
-
-
-
-
-
-
-
-from sklearn.metrics import f1_score
-import pandas as pd
-import copy
-
-
-def train_step_graph(model, train_loader, optimizer, lambda_entropy=0):
+def gc_train_step(model, train_loader, optimizer, lambda_entropy=0):
     ''' Training step: returns average loss over batch '''
     model.train()
     total_loss = 0
@@ -481,7 +469,7 @@ def train_step_graph(model, train_loader, optimizer, lambda_entropy=0):
     return avg_loss
 
 
-def test_graph(model, test_loader):
+def gc_test(model, test_loader):
     ''' Evaluation: returns accuracy and F1 score '''
     model.eval()
     y_true, y_pred = [], []
@@ -496,7 +484,7 @@ def test_graph(model, test_loader):
     return micro_acc, weighted_f1, y_true, y_pred
 
 
-def training_graph(model, train_loader, val_loader, optimizer, epochs=250, patience=50, lambda_entropy=0):
+def gc_training(model, train_loader, val_loader, optimizer, epochs=250, patience=50, lambda_entropy=0):
     ''' Training function '''
     rec_df = pd.DataFrame(columns=['train_loss', 'val_acc', 'val_f1'])
     best_score = 0
@@ -504,8 +492,8 @@ def training_graph(model, train_loader, val_loader, optimizer, epochs=250, patie
     best_model_state = None
 
     for epoch in range(epochs):
-        train_loss = train_step_graph(model, train_loader, optimizer, lambda_entropy)
-        val_acc, val_f1, _, _ = test_graph(model, val_loader)
+        train_loss = gc_train_step(model, train_loader, optimizer, lambda_entropy)
+        val_acc, val_f1, _, _ = gc_test(model, val_loader)
         rec_df.loc[len(rec_df)] = [train_loss, val_acc, val_f1]
         if val_acc + val_f1 > best_score:
             best_score = val_acc + val_f1
@@ -521,27 +509,14 @@ def training_graph(model, train_loader, val_loader, optimizer, epochs=250, patie
     return rec_df
 
 
-
-
-def gc_augment_graph(graph, n=1, device='cpu'):
-    graph_clone = graph.clone()
-    node_as = random.choices(range(graph_clone.num_nodes), k=n)
-    node_bs = random.choices(range(graph_clone.num_nodes), k=n)
-    graph_clone.edge_index = torch.cat((graph_clone.edge_index, torch.tensor([node_as, node_bs]).to(device)), dim=1)
-    graph_clone.edge_index = graph_clone.edge_index[:, graph_clone.edge_index[0, :].argsort()]
-    return graph_clone
-
-from torch_geometric.data import Batch
-
-
-def gc_train_step_augm(model, train_loader, optimizer, lambda_entropy=0, device='cpu'):
+def gc_train_step_augm(model, train_loader, optimizer, lambda_entropy=0, device='cpu', augm=0.1):
     ''' Training step: returns average loss over batch '''
     model.train()
     total_loss = 0
     for data in train_loader:
         data = data.to(device)
         graphs = data.to_data_list()
-        augmented_graphs = [gc_augment_graph(graph, int(graph.num_edges * 0.1), device) for graph in graphs]
+        augmented_graphs = [augment_graph(graph, int(graph.num_edges * augm), device) for graph in graphs]
         new_data = Batch.from_data_list(augmented_graphs)
         optimizer.zero_grad()
         _, out = model(new_data.x, new_data.edge_index, new_data.batch)
@@ -556,7 +531,7 @@ def gc_train_step_augm(model, train_loader, optimizer, lambda_entropy=0, device=
     return avg_loss
 
 
-def gc_training_augm(model, train_loader, val_loader, optimizer, epochs=250, patience=50, lambda_entropy=0, device='cpu'):
+def gc_training_augm(model, train_loader, val_loader, optimizer, epochs=250, patience=50, lambda_entropy=0, device='cpu', augm=0.1):
     ''' Training function '''
     rec_df = pd.DataFrame(columns=['train_loss', 'val_acc', 'val_f1'])
     best_score = 0
@@ -564,8 +539,8 @@ def gc_training_augm(model, train_loader, val_loader, optimizer, epochs=250, pat
     best_model_state = None
 
     for epoch in range(epochs):
-        train_loss = gc_train_step_augm(model, train_loader, optimizer, lambda_entropy, device)
-        val_acc, val_f1, _, _ = test_graph(model, val_loader)
+        train_loss = gc_train_step_augm(model, train_loader, optimizer, lambda_entropy, device, augm)
+        val_acc, val_f1, _, _ = gc_test(model, val_loader)
         rec_df.loc[len(rec_df)] = [train_loss, val_acc, val_f1]
         if val_acc + val_f1 > best_score:
             best_score = val_acc + val_f1
@@ -580,15 +555,6 @@ def gc_training_augm(model, train_loader, val_loader, optimizer, epochs=250, pat
         model.load_state_dict(best_model_state)
     return rec_df
 
-
-
-import torch
-import numpy as np
-import random
-import copy
-import torch.nn.functional as F  # for F.cross_entropy
-import pandas as pd
-from torch_geometric.data import Batch
 
 def gc_rewire_graph(graph, p=0.4):
     # Work on a copy so that the original graph remains unchanged.
@@ -710,16 +676,13 @@ def gc_rewire_graph(graph, p=0.4):
     return new_graph
 
 
-from torch_geometric.data import Batch
-
-
-def gc_train_step_rew(model, train_loader, optimizer, lambda_entropy=0):
+def gc_train_step_rew(model, train_loader, optimizer, lambda_entropy=0, rew=0.1):
     ''' Training step: returns average loss over batch '''
     model.train()
     total_loss = 0
     for data in train_loader:
         graphs = data.to_data_list()
-        rewired_graphs = [gc_rewire_graph(graph, p=0.1) for graph in graphs]
+        rewired_graphs = [gc_rewire_graph(graph, rew) for graph in graphs]
         new_data = Batch.from_data_list(rewired_graphs)
         optimizer.zero_grad()
         _, out = model(new_data.x, new_data.edge_index, new_data.batch)
@@ -733,7 +696,7 @@ def gc_train_step_rew(model, train_loader, optimizer, lambda_entropy=0):
     return avg_loss
 
 
-def gc_training_rew(model, train_loader, val_loader, optimizer, epochs=250, patience=50, lambda_entropy=0):
+def gc_training_rew(model, train_loader, val_loader, optimizer, epochs=250, patience=50, lambda_entropy=0, rew=0.1):
     ''' Training function '''
     rec_df = pd.DataFrame(columns=['train_loss', 'val_acc', 'val_f1'])
     best_score = 0
@@ -741,8 +704,8 @@ def gc_training_rew(model, train_loader, val_loader, optimizer, epochs=250, pati
     best_model_state = None
 
     for epoch in range(epochs):
-        train_loss = gc_train_step_rew(model, train_loader, optimizer, lambda_entropy)
-        val_acc, val_f1, _, _ = test_graph(model, val_loader)
+        train_loss = gc_train_step_rew(model, train_loader, optimizer, lambda_entropy, rew)
+        val_acc, val_f1, _, _ = gc_test(model, val_loader)
         rec_df.loc[len(rec_df)] = [train_loss, val_acc, val_f1]
         if val_acc + val_f1 > best_score:
             best_score = val_acc + val_f1
@@ -757,10 +720,6 @@ def gc_training_rew(model, train_loader, val_loader, optimizer, epochs=250, pati
         model.load_state_dict(best_model_state)
     return rec_df
 
-
-from sklearn.metrics import f1_score
-from torch_geometric.data import Batch
-import pandas as pd
 
 def gc_train_step_siamesenet_PW(model, triplet_train_loader, optimizer, lambda_entropy=0, device='cpu', augm=False):
     ''' Train step for Siamese Net with pairwise loss '''
@@ -839,7 +798,7 @@ def gc_training_siamesenet(model, train_loader, val_loader, optimizer, epochs=25
         else:
             raise ValueError(f'Invalid CL_Loss: {CL_Loss} not in [PW, TPL, PW_A, TPL_A]')
 
-        val_acc, val_f1, _, _ = test_graph(model, val_loader)
+        val_acc, val_f1, _, _ = gc_test(model, val_loader)
         rec_df.loc[len(rec_df)] = [train_loss, val_acc, val_f1]
         if val_acc + val_f1 > best_score:
             best_score = val_acc + val_f1
@@ -852,7 +811,6 @@ def gc_training_siamesenet(model, train_loader, val_loader, optimizer, epochs=25
     if best_model_state is not None:
         model.load_state_dict(best_model_state)
     return rec_df
-
 
 
 def gc_pretrain_graphcl(model, train_loader, optimizer):
@@ -880,18 +838,6 @@ def gc_pretraining(model, train_loader, optimizer, epochs=100):
     for epoch in range(epochs):
         loss = gc_pretrain_graphcl(model, train_loader, optimizer)
 
-
-
-
-
-
-
-
-
-
-
-from sklearn.metrics import f1_score
-import pandas as pd
 
 def gc_get_prototypes(model, train_dataset):
     model.eval()
@@ -931,7 +877,6 @@ def gc_test_protonet(model, prototypes, test_dataset):
     accuracy = sum(t == p for t, p in zip(y_true, y_pred)) / len(y_true)
     f1 = f1_score(y_true, y_pred, average="weighted")
     return accuracy, f1, y_true, y_pred
-
 
 
 def gc_train_step_protonet(model, triplet_train_loader, optimizer):
@@ -974,6 +919,3 @@ def gc_training_protonet(model, train_dataset, train_loader, val_dataset, optimi
     if best_model_state is not None:
         model.load_state_dict(best_model_state)
     return rec_df
-
-
-
