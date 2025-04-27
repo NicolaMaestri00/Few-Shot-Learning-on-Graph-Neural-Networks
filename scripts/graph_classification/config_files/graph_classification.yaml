@@ -1,0 +1,24 @@
+data:
+  dataset_name: "ENZYMES"            # ['MUTAG', 'PROTEINS', 'ENZYMES', 'NCI1', 'NCI109', 'DD']
+  samples_per_class: [5, 10]
+
+results_path: "/home/nicolamaestri/nm_gnn/scripts/graph_classification/results/ENZYMES"
+
+model:
+  hidden_channels: 64
+  drop_msg: 0.9
+  DropNode: 0.5
+  DropEdge: 0.5
+  DropAttributes: 0.5
+  augm: 0.1
+  rew: 0.1
+
+optimizer:
+  lr: 0.001
+  weight_decay: 0.00005
+
+n_runs: 2
+
+training:
+  epochs: 500
+  patience: 25

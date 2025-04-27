@@ -1,0 +1,17 @@
+Method,FS5,FS10
+Baseline,66.97,67.23
+CSR,68.09,65.69
+ER,66.44,68.24
+Dropout,66.44,67.23
+DropMessage,64.15,63.88
+DropNode,64.79,65.8
+DropEdge,57.39,60.0
+DropAttributes,63.83,63.35
+Augmentation,66.7,67.77
+Rewiring,67.87,67.55
+ProtoNet,65.59,64.84
+Siamese_PW,64.47,62.77
+Siamese_PW_A,61.28,63.94
+Siamese_TPL,67.13,68.46
+Siamese_TPL_A,67.02,67.5
+Graph_CL,67.29,68.67
