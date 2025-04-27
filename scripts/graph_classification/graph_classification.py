@@ -18,23 +18,26 @@ if __name__ == "__main__":
     print(f"\n\n{'='*20} {config['data']['dataset_name']} - {start_time} - {device} {'='*20}")
 
     # Load the dataset
-    dataset, shots, test_dataset, test_loader = data_modules.get_graphs(device=device, **config["data"])
+    dataset, shots, test_dataset, test_loader = data_modules.gc_get_data(device=device, **config["data"])
 
     # Baseline
-    functions.baseline_graph(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"])
+    functions.gc_baseline(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"])
 
     # Regularization Strategies
-    functions.regularized_graph(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"], csr=True)
-    functions.regularized_graph(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"], er=True)
+    functions.gc_regularization(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"], csr=True)   # Cosine Similarity Regularization
+    functions.gc_regularization(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"], er=True)    # Entropy Regularization
 
-    # Dropout Strategies
-    functions.dropout_graph(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"])
-    functions.dropmessage_graph(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"])
-    functions.dropstrategy_graph(config=config, shots=shots, test_loader=test_loader, drop_strategy="DropNode", device=device, dataset=dataset, results_path=config["results_path"])
-    functions.dropstrategy_graph(config=config, shots=shots, test_loader=test_loader, drop_strategy="DropEdge", device=device, dataset=dataset, results_path=config["results_path"])
-    functions.dropstrategy_graph(config=config, shots=shots, test_loader=test_loader, drop_strategy="DropAttributes", device=device, dataset=dataset, results_path=config["results_path"])
+    # Augmentation Strategies
+    functions.gc_dropout(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"])
+    functions.gc_drop_message(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"])
+    functions.gc_dropblock(config=config, shots=shots, test_loader=test_loader, drop_strategy="DropNode", device=device, dataset=dataset, results_path=config["results_path"])
+    functions.gc_dropblock(config=config, shots=shots, test_loader=test_loader, drop_strategy="DropEdge", device=device, dataset=dataset, results_path=config["results_path"])
+    functions.gc_dropblock(config=config, shots=shots, test_loader=test_loader, drop_strategy="DropAttributes", device=device, dataset=dataset, results_path=config["results_path"])
     functions.gc_augmentation(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"])
     functions.gc_rewiring(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"])
+
+    # Pre-training and Fine-tuning
+    functions.gc_graphCL(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"])
 
     # Prototypical Networks
     functions.gc_protonet(config=config, shots=shots, test_dataset=test_dataset, device=device, dataset=dataset, results_path=config["results_path"])
@@ -44,9 +47,6 @@ if __name__ == "__main__":
     functions.gc_siamesenet(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"], CL_Loss='PW_A')
     functions.gc_siamesenet(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"], CL_Loss='TPL')
     functions.gc_siamesenet(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"], CL_Loss='TPL_A')
-
-    # Graph Contrastive Learning
-    functions.gc_graphCL(config=config, shots=shots, test_loader=test_loader, device=device, dataset=dataset, results_path=config["results_path"])
     
 
     end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

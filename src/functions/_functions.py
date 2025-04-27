@@ -6,12 +6,14 @@ import concurrent.futures
 import numpy as np
 import pandas as pd
 import torch
+from torch_geometric.loader import DataLoader
+from torch_geometric.datasets import TUDataset
 
 import models
 import utils
 
 
-def baseline(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
+def nc_baseline(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
     '''    Baseline function for node classification tasks    '''
 
     num_classes = int(data.y.max().item()) + 1
@@ -32,11 +34,11 @@ def baseline(config: dict, data, shots: list, device: torch.device, results_path
 
     def run_experiment(train_mask):
         # Instantiate the model
-        model = models.GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.nc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.training(model, data, train_mask, data.val_mask, optimizer, **config["training"])
-        acc, f1, _, _ = utils.test(model, data, data.test_mask)
+        train_df = utils.nc_training(model, data, train_mask, data.val_mask, optimizer, **config["training"])
+        acc, f1, _, _ = utils.nc_test(model, data, data.test_mask)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} Baseline {"-"*20}')
@@ -85,7 +87,7 @@ def baseline(config: dict, data, shots: list, device: torch.device, results_path
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-def reg_baseline(config: dict, data, shots: list, device: torch.device, results_path: str='./results/', csr=False, er=False) -> None:
+def nc_regularization(config: dict, data, shots: list, device: torch.device, results_path: str='./results/', csr=False, er=False) -> None:
     '''    Regularized baseline for node classification tasks     '''
 
     num_classes = int(data.y.max().item()) + 1
@@ -106,14 +108,14 @@ def reg_baseline(config: dict, data, shots: list, device: torch.device, results_
 
     def run_experiment(run, train_mask):
         # Instantiate the model
-        model = models.GCN(in_channels, config["model"]["hidden_channels"], num_classes, cs_reg=csr).to(device)     # Cosine Similarity Regularization
+        model = models.nc_GCN(in_channels, config["model"]["hidden_channels"], num_classes, cs_reg=csr).to(device)     # Cosine Similarity Regularization
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
         if er:    # Entropy Regularization
-            train_df = utils.training(model, data, train_mask, data.val_mask, optimizer, lambda_entropy=-0.5, **config["training"])
+            train_df = utils.nc_training(model, data, train_mask, data.val_mask, optimizer, lambda_entropy=-0.5, **config["training"])
         else:
-            train_df = utils.training(model, data, train_mask, data.val_mask, optimizer, **config["training"])
-        acc, f1, _, _ = utils.test(model, data, data.test_mask)
+            train_df = utils.nc_training(model, data, train_mask, data.val_mask, optimizer, **config["training"])
+        acc, f1, _, _ = utils.nc_test(model, data, data.test_mask)
         return acc, f1, train_df
 
     if csr:
@@ -171,7 +173,7 @@ def reg_baseline(config: dict, data, shots: list, device: torch.device, results_
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-def drop_message(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
+def nc_drop_message(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
     '''    DropMessage    '''
 
     num_classes = int(data.y.max().item()) + 1
@@ -192,11 +194,11 @@ def drop_message(config: dict, data, shots: list, device: torch.device, results_
 
     def run_experiment(train_mask):
         # Instantiate the model
-        model = models.GNN_DropMessage(in_channels, config["model"]["hidden_channels"], num_classes, drop_rate=config["model"]["drop_msg"]).to(device)  # DropMessage
+        model = models.nc_GNN_DropMessage(in_channels, config["model"]["hidden_channels"], num_classes, drop_rate=config["model"]["drop_msg"]).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.training(model, data, train_mask, data.val_mask, optimizer, lambda_entropy=-0.5, **config["training"])
-        acc, f1, _, _ = utils.test(model, data, data.test_mask)
+        train_df = utils.nc_training(model, data, train_mask, data.val_mask, optimizer, lambda_entropy=-0.5, **config["training"])
+        acc, f1, _, _ = utils.nc_test(model, data, data.test_mask)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} DropMessage {"-"*20}')
@@ -245,7 +247,7 @@ def drop_message(config: dict, data, shots: list, device: torch.device, results_
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-def dropout(config: dict, data, shots: list, device: torch.device, drop_strategy="DropNode", results_path: str='./results/') -> None:
+def nc_dropblock(config: dict, data, shots: list, device: torch.device, drop_strategy="DropNode", results_path: str='./results/') -> None:
     '''    Dropout    '''
 
     num_classes = int(data.y.max().item()) + 1
@@ -266,11 +268,11 @@ def dropout(config: dict, data, shots: list, device: torch.device, drop_strategy
 
     def run_experiment(train_mask):
         # Instantiate the model
-        model = models.GNN(in_channels, config["model"]["hidden_channels"], num_classes, drop_strategy, drop_rate=config["model"][drop_strategy]).to(device)  # DropNode
+        model = models.nc_GNN_DropBlock(in_channels, config["model"]["hidden_channels"], num_classes, drop_strategy, drop_rate=config["model"][drop_strategy]).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.training(model, data, train_mask, data.val_mask, optimizer, lambda_entropy=-0.5, **config["training"])
-        acc, f1, _, _ = utils.test(model, data, data.test_mask)
+        train_df = utils.nc_training(model, data, train_mask, data.val_mask, optimizer, lambda_entropy=-0.5, **config["training"])
+        acc, f1, _, _ = utils.nc_test(model, data, data.test_mask)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} {drop_strategy} {"-"*20}')
@@ -319,7 +321,7 @@ def dropout(config: dict, data, shots: list, device: torch.device, drop_strategy
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-def augmentation(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
+def nc_augmentation(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
     '''   Augmentation    '''
 
     num_classes = int(data.y.max().item()) + 1
@@ -340,11 +342,11 @@ def augmentation(config: dict, data, shots: list, device: torch.device, results_
 
     def run_experiment(train_mask):
         # Instantiate the model
-        model = models.GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.nc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.training_augm(model, data, train_mask, data.val_mask, optimizer, device=device, lambda_entropy=-0.5, augm=config["model"]["augm"], **config["training"])
-        acc, f1, _, _ = utils.test(model, data, data.test_mask)
+        train_df = utils.nc_training_augm(model, data, train_mask, data.val_mask, optimizer, device=device, lambda_entropy=-0.5, augm=config["model"]["augm"], **config["training"])
+        acc, f1, _, _ = utils.nc_test(model, data, data.test_mask)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} Augmentation {"-"*20}')
@@ -393,7 +395,7 @@ def augmentation(config: dict, data, shots: list, device: torch.device, results_
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-def rewiring(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
+def nc_rewiring(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
     '''   Rewiring    '''
 
     num_classes = int(data.y.max().item()) + 1
@@ -414,11 +416,11 @@ def rewiring(config: dict, data, shots: list, device: torch.device, results_path
 
     def run_experiment(train_mask):
         # Instantiate the model
-        model = models.GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.nc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.training_rew(model, data, train_mask, data.val_mask, optimizer, lambda_entropy=-0.5, rew=config["model"]["rew"], **config["training"])
-        acc, f1, _, _ = utils.test(model, data, data.test_mask)
+        train_df = utils.nc_training_rew(model, data, train_mask, data.val_mask, optimizer, lambda_entropy=-0.5, rew=config["model"]["rew"], **config["training"])
+        acc, f1, _, _ = utils.nc_test(model, data, data.test_mask)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} Rewiring {"-"*20}')
@@ -467,7 +469,7 @@ def rewiring(config: dict, data, shots: list, device: torch.device, results_path
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-def protonet(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
+def nc_protonet(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
     '''   ProtoNet    '''
 
     num_classes = int(data.y.max().item()) + 1
@@ -488,12 +490,12 @@ def protonet(config: dict, data, shots: list, device: torch.device, results_path
 
     def run_experiment(train_mask):
         # Instantiate the model
-        model = models.GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.nc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.training_protonet(model, data, train_mask, data.val_mask, optimizer, **config["training"])
-        prototypes = utils.get_prototypes(model, data, data.test_mask)
-        acc, f1, _, _ = utils.test_protonet(model, data, data.test_mask, prototypes)
+        train_df = utils.nc_training_protonet(model, data, train_mask, data.val_mask, optimizer, **config["training"])
+        prototypes = utils.nc_get_prototypes(model, data, data.test_mask)
+        acc, f1, _, _ = utils.nc_test_protonet(model, data, data.test_mask, prototypes)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} ProtoNet {"-"*20}')
@@ -542,7 +544,7 @@ def protonet(config: dict, data, shots: list, device: torch.device, results_path
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-def siamesenet(config: dict, data, shots: list, device: torch.device, results_path: str='./results/', CL_Loss='TPL') -> None:
+def nc_siamesenet(config: dict, data, shots: list, device: torch.device, results_path: str='./results/', CL_Loss='TPL') -> None:
     '''    Siamese Network    '''
 
     num_classes = int(data.y.max().item()) + 1
@@ -563,11 +565,11 @@ def siamesenet(config: dict, data, shots: list, device: torch.device, results_pa
 
     def run_experiment(train_mask):
         # Instantiate the model
-        model = models.GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.nc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.training_siamesenet(model, data, train_mask, data.val_mask, optimizer, CL_Loss=CL_Loss, lambda_entropy=-0.5, device=device, **config["training"])
-        acc, f1, _, _ = utils.test(model, data, data.test_mask)
+        train_df = utils.nc_training_siamesenet(model, data, train_mask, data.val_mask, optimizer, CL_Loss=CL_Loss, lambda_entropy=-0.5, device=device, **config["training"])
+        acc, f1, _, _ = utils.nc_test(model, data, data.test_mask)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} {"Siamese_"+CL_Loss} {"-"*20}')
@@ -616,7 +618,7 @@ def siamesenet(config: dict, data, shots: list, device: torch.device, results_pa
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-def graphcl(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
+def nc_graphcl(config: dict, data, shots: list, device: torch.device, results_path: str='./results/') -> None:
     '''    GraphCL    '''
 
     num_classes = int(data.y.max().item()) + 1
@@ -637,13 +639,13 @@ def graphcl(config: dict, data, shots: list, device: torch.device, results_path:
 
     def run_experiment(train_mask):
         # Instantiate the model
-        model = models.GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.nc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         pretraining_opt = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        utils.pretrain_graphcl(model, data, train_mask, pretraining_opt, epochs=100)
-        train_df = utils.training(model, data, train_mask, data.val_mask, optimizer, lambda_entropy=-0.5, **config["training"])
-        acc, f1, _, _ = utils.test(model, data, data.test_mask)
+        utils.nc_pretrain_graphcl(model, data, train_mask, pretraining_opt, epochs=100)
+        train_df = utils.nc_training(model, data, train_mask, data.val_mask, optimizer, lambda_entropy=-0.5, **config["training"])
+        acc, f1, _, _ = utils.nc_test(model, data, data.test_mask)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} GraphCL {"-"*20}')
@@ -692,15 +694,7 @@ def graphcl(config: dict, data, shots: list, device: torch.device, results_path:
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-
-
-
-
-
-from torch_geometric.loader import DataLoader
-from torch_geometric.datasets import TUDataset
-
-def baseline_graph(config: dict, shots: list, test_loader: DataLoader, device: torch.device, dataset: TUDataset, results_path: str='./results/') -> None:
+def gc_baseline(config: dict, shots: list, test_loader: DataLoader, device: torch.device, dataset: TUDataset, results_path: str='./results/') -> None:
 
     in_channels = dataset.num_node_features
     num_classes = dataset.num_classes
@@ -721,11 +715,11 @@ def baseline_graph(config: dict, shots: list, test_loader: DataLoader, device: t
     # Experiment definition
     def run_experiment(train_loader, test_loader):
         # Instantiate the model
-        model = models.GCN_graph(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.gc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.training_graph(model, train_loader, test_loader, optimizer, **config["training"])
-        acc, f1, _, _ = utils.test_graph(model, test_loader)
+        train_df = utils.gc_training(model, train_loader, test_loader, optimizer, **config["training"])
+        acc, f1, _, _ = utils.gc_test(model, test_loader)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} Baseline {"-"*20}')
@@ -774,12 +768,7 @@ def baseline_graph(config: dict, shots: list, test_loader: DataLoader, device: t
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-import pathlib
-
-from torch_geometric.loader import DataLoader
-from torch_geometric.datasets import TUDataset
-
-def regularized_graph(config: dict, shots: list, test_loader: DataLoader, device: torch.device, dataset: TUDataset, results_path: str='./results/', csr=False, er=False) -> None:
+def gc_regularization(config: dict, shots: list, test_loader: DataLoader, device: torch.device, dataset: TUDataset, results_path: str='./results/', csr=False, er=False) -> None:
 
     in_channels = dataset.num_node_features
     num_classes = dataset.num_classes
@@ -800,14 +789,14 @@ def regularized_graph(config: dict, shots: list, test_loader: DataLoader, device
     # Experiment definition
     def run_experiment(train_loader, test_loader):
         # Instantiate the model
-        model = models.GCN_graph(in_channels, config["model"]["hidden_channels"], num_classes, cs_reg=csr).to(device)
+        model = models.gc_GCN(in_channels, config["model"]["hidden_channels"], num_classes, cs_reg=csr).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
         if er:    # Entropy Regularization
-            train_df = utils.training_graph(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, **config["training"])
+            train_df = utils.gc_training(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, **config["training"])
         else:
-            train_df = utils.training_graph(model, train_loader, test_loader, optimizer, **config["training"])
-        acc, f1, _, _ = utils.test_graph(model, test_loader)
+            train_df = utils.gc_training(model, train_loader, test_loader, optimizer, **config["training"])
+        acc, f1, _, _ = utils.gc_test(model, test_loader)
         return acc, f1, train_df
 
     if csr:
@@ -865,14 +854,7 @@ def regularized_graph(config: dict, shots: list, test_loader: DataLoader, device
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-
-import pathlib
-
-import pandas as pd
-from torch_geometric.loader import DataLoader
-from torch_geometric.datasets import TUDataset
-
-def dropout_graph(config: dict, shots: list, test_loader: DataLoader, device: torch.device, dataset: TUDataset, results_path: str='./results/') -> None:
+def gc_dropout(config: dict, shots: list, test_loader: DataLoader, device: torch.device, dataset: TUDataset, results_path: str='./results/') -> None:
 
     in_channels = dataset.num_node_features
     num_classes = dataset.num_classes
@@ -893,11 +875,11 @@ def dropout_graph(config: dict, shots: list, test_loader: DataLoader, device: to
     # Experiment definition
     def run_experiment(train_loader, test_loader):
         # Instantiate the model
-        model = models.gc_GNN_Dropout(in_channels, config["model"]["hidden_channels"], num_classes, drop_rate=0.5).to(device)
+        model = models.gc_GNN_Dropout(in_channels, config["model"]["hidden_channels"], num_classes, drop_rate=config["model"]["dropout"]).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.training_graph(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, **config["training"])
-        acc, f1, _, _ = utils.test_graph(model, test_loader)
+        train_df = utils.gc_training(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, **config["training"])
+        acc, f1, _, _ = utils.gc_test(model, test_loader)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} Dropout {"-"*20}')
@@ -946,13 +928,7 @@ def dropout_graph(config: dict, shots: list, test_loader: DataLoader, device: to
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-import pathlib
-
-import pandas as pd
-from torch_geometric.loader import DataLoader
-from torch_geometric.datasets import TUDataset
-
-def dropmessage_graph(config: dict, shots: list, test_loader: DataLoader, device: torch.device, dataset: TUDataset, results_path: str='./results/') -> None:
+def gc_drop_message(config: dict, shots: list, test_loader: DataLoader, device: torch.device, dataset: TUDataset, results_path: str='./results/') -> None:
 
     in_channels = dataset.num_node_features
     num_classes = dataset.num_classes
@@ -973,11 +949,11 @@ def dropmessage_graph(config: dict, shots: list, test_loader: DataLoader, device
     # Experiment definition
     def run_experiment(train_loader, test_loader):
         # Instantiate the model
-        model = models.gc_GNN_DropMessage(in_channels, config["model"]["hidden_channels"], num_classes, drop_rate=0.8).to(device)
+        model = models.gc_GNN_DropMessage(in_channels, config["model"]["hidden_channels"], num_classes, drop_rate=config["model"]["drop_msg"]).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.training_graph(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, **config["training"])
-        acc, f1, _, _ = utils.test_graph(model, test_loader)
+        train_df = utils.gc_training(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, **config["training"])
+        acc, f1, _, _ = utils.gc_test(model, test_loader)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} DropMessage {"-"*20}')
@@ -1026,13 +1002,7 @@ def dropmessage_graph(config: dict, shots: list, test_loader: DataLoader, device
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-import pathlib
-
-import pandas as pd
-from torch_geometric.loader import DataLoader
-from torch_geometric.datasets import TUDataset
-
-def dropstrategy_graph(config: dict, shots: list, test_loader: DataLoader, drop_strategy: str, device: torch.device, dataset: TUDataset, results_path: str='./results/') -> None:
+def gc_dropblock(config: dict, shots: list, test_loader: DataLoader, drop_strategy: str, device: torch.device, dataset: TUDataset, results_path: str='./results/') -> None:
 
     in_channels = dataset.num_node_features
     num_classes = dataset.num_classes
@@ -1053,11 +1023,11 @@ def dropstrategy_graph(config: dict, shots: list, test_loader: DataLoader, drop_
     # Experiment definition
     def run_experiment(train_loader, test_loader):
         # Instantiate the model
-        model = models.gc_GNN_DropBlock(in_channels, config["model"]["hidden_channels"], num_classes, drop_strategy, drop_rate=0.8).to(device)
+        model = models.gc_GNN_DropBlock(in_channels, config["model"]["hidden_channels"], num_classes, drop_strategy, drop_rate=config["model"][drop_strategy]).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.training_graph(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, **config["training"])
-        acc, f1, _, _ = utils.test_graph(model, test_loader)
+        train_df = utils.gc_training(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, **config["training"])
+        acc, f1, _, _ = utils.gc_test(model, test_loader)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} {drop_strategy} {"-"*20}')
@@ -1106,20 +1076,6 @@ def dropstrategy_graph(config: dict, shots: list, test_loader: DataLoader, drop_
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def gc_augmentation(config: dict, shots: list, test_loader: DataLoader, device: torch.device, dataset: TUDataset, results_path: str='./results/') -> None:
 
     in_channels = dataset.num_node_features
@@ -1141,11 +1097,11 @@ def gc_augmentation(config: dict, shots: list, test_loader: DataLoader, device: 
     # Experiment definition
     def run_experiment(train_loader, test_loader):
         # Instantiate the model
-        model = models.GCN_graph(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.gc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.gc_training_augm(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, device=device, **config["training"])
-        acc, f1, _, _ = utils.test_graph(model, test_loader)
+        train_df = utils.gc_training_augm(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, device=device, augm=config["model"]["augm"], **config["training"])
+        acc, f1, _, _ = utils.gc_test(model, test_loader)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} Augmentation {"-"*20}')
@@ -1194,9 +1150,6 @@ def gc_augmentation(config: dict, shots: list, test_loader: DataLoader, device: 
     utils.save_dfs(dfs=dfs, file_path=results_path, file_names=file_names)
 
 
-
-
-
 def gc_rewiring(config: dict, shots: list, test_loader: DataLoader, device: torch.device, dataset: TUDataset, results_path: str='./results/') -> None:
 
     in_channels = dataset.num_node_features
@@ -1218,11 +1171,11 @@ def gc_rewiring(config: dict, shots: list, test_loader: DataLoader, device: torc
     # Experiment definition
     def run_experiment(train_loader, test_loader):
         # Instantiate the model
-        model = models.GCN_graph(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.gc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
-        train_df = utils.gc_training_rew(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, **config["training"])
-        acc, f1, _, _ = utils.test_graph(model, test_loader)
+        train_df = utils.gc_training_rew(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, rew=config["model"]["rew"], **config["training"])
+        acc, f1, _, _ = utils.gc_test(model, test_loader)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} Rewiring {"-"*20}')
@@ -1290,13 +1243,13 @@ def gc_siamesenet(config: dict, shots: list, test_loader: DataLoader, device: to
     avg_accuracies, std_accuracies, avg_f1_scores, std_f1_scores = [], [], [], []
 
     # Experiment definition
-    def run_experiment(train_loader, test_loader):
+    def run_experiment(triplet_train_loader, test_loader):
         # Instantiate the model
-        model = models.GCN_graph(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.gc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
         train_df = utils.gc_training_siamesenet(model, triplet_train_loader, test_loader, optimizer, CL_Loss=CL_Loss, lambda_entropy=-0.5, device=device, **config["training"])
-        acc, f1, _, _ = utils.test_graph(model, test_loader)
+        acc, f1, _, _ = utils.gc_test(model, test_loader)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} {"Siamese_"+CL_Loss} {"-"*20}')
@@ -1366,13 +1319,13 @@ def gc_graphCL(config: dict, shots: list, test_loader: DataLoader, device: torch
     # Experiment definition
     def run_experiment(train_loader, test_loader):
         # Instantiate the model
-        model = models.GCN_graph(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.gc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         pretraining_opt = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
         utils.gc_pretraining(model, train_loader, pretraining_opt, epochs=100)
-        train_df = utils.training_graph(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, **config["training"])
-        acc, f1, _, _ = utils.test_graph(model, test_loader)
+        train_df = utils.gc_training(model, train_loader, test_loader, optimizer, lambda_entropy=-0.5, **config["training"])
+        acc, f1, _, _ = utils.gc_test(model, test_loader)
         return acc, f1, train_df
 
     print(f'\n\n{"-"*20} Graph_CL {"-"*20}')
@@ -1442,7 +1395,7 @@ def gc_protonet(config: dict, shots: list, test_dataset, device: torch.device, d
     # Experiment definition
     def run_experiment(train_dataset, triplet_train_loader, test_dataset):
         # Instantiate the model
-        model = models.GCN_graph(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
+        model = models.gc_GCN(in_channels, config["model"]["hidden_channels"], num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), **config["optimizer"])
         # Train and evaluate the model
         train_df = utils.gc_training_protonet(model, train_dataset, triplet_train_loader, test_dataset, optimizer, **config["training"])
