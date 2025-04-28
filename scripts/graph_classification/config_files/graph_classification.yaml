@@ -1,8 +1,8 @@
 data:
-  dataset_name: "MUTAG"            # ['MUTAG', 'PROTEINS', 'ENZYMES', 'NCI1', 'NCI109', 'DD']
-  samples_per_class: [5, 10]
+  dataset_name: "PROTEINS"            # ['MUTAG', 'PROTEINS', 'ENZYMES', 'NCI1', 'NCI109', 'DD']
+  samples_per_class: [5, 10, 20, 40, 60, 80]
 
-results_path: "/home/nicolamaestri/nm_gnn/scripts/graph_classification/results/MUTAG"
+results_path: "/home/nicolamaestri/nm_gnn/scripts/graph_classification/results/PROTEINS"
 
 model:
   hidden_channels: 64
@@ -18,7 +18,7 @@ optimizer:
   lr: 0.001
   weight_decay: 0.00005
 
-n_runs: 2
+n_runs: 5
 
 training:
   epochs: 500
