@@ -124,13 +124,7 @@ def gc_get_data(dataset_name: str, samples_per_class: list, device: torch.device
     """ Graph Classification Dataset Loader """
 
     dataset = TUDataset(root='data/TUDataset', name=dataset_name)
-    in_channels = dataset.num_node_features
     num_classes = dataset.num_classes
-
-    if dataset_name in ['MUTAG']:
-        samples_per_class = [5, 10]
-    else:
-        samples_per_class = [5, 10]
 
     shots = []
     train_dataset = []
