@@ -683,10 +683,10 @@ def nc_graphcl(config: dict, data, shots: list, device: torch.device, results_pa
         print(f"\tAvg. F1 Score: {avg_f1:.2f} ± {std_f1:.2f} %\t\tF1 Score: [{', '.join([f'{f1*100:.2f}' for f1 in f1_scores])}]")
 
     # Log the results to the DataFrames
-    avg_acc_df.loc[len(avg_acc_df)] = ["GraphCL"] + avg_accuracies
-    std_acc_df.loc[len(std_acc_df)] = ["GraphCL"] + std_accuracies
-    avg_f1_df.loc[len(avg_f1_df)] = ["GraphCL"] + avg_f1_scores
-    std_f1_df.loc[len(std_f1_df)] = ["GraphCL"] + std_f1_scores
+    avg_acc_df.loc[len(avg_acc_df)] = ["Graph_CL"] + avg_accuracies
+    std_acc_df.loc[len(std_acc_df)] = ["Graph_CL"] + std_accuracies
+    avg_f1_df.loc[len(avg_f1_df)] = ["Graph_CL"] + avg_f1_scores
+    std_f1_df.loc[len(std_f1_df)] = ["Graph_CL"] + std_f1_scores
 
     # Save the DataFrames to CSV files
     dfs = [avg_acc_df, std_acc_df, avg_f1_df, std_f1_df]
