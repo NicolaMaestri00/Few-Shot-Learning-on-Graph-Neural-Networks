@@ -1,6 +1,8 @@
 # Few-Shot Learning on Graph Neural Networks
 
-In this project, we explore *Few-Shot Learning* (FSL) in the context of *Graph Neural Networks* (GNNs) for *Graph Classification* and *Node Classification*.
+*Few-Shot Node Classification* (FSNC) and *Few-Shot Graph Classification* (FSGC) are fundamental problems in Few-Shot Learning on Graphs, the research area that combines Graph Representation Learning and Few-Shot Learning (FSL). Despite extensive work in both domains, comprehensive studies regarding the integration of regularization and FSL strategies remain rare. In this paper, we establish baselines for more advanced methods by systematically evaluating how well models can generalize from few samples using five widely-adopted strategies: regularization, augmentation, prototypical networks, siamese networks, pre-training and fine-tuning. For each task, the same model is trained from scratch with an increasing number of samples per class. To leverage contextual information, the architecture consists of a sequence of three graph convolutional layers, which provides good inductive bias despite limited training data. Six datasets are considered for FSNC and three for FSGC, reporting as evaluation metrics micro accuracy and micro F1-score, averaged over multiple runs. Although the final performance correlates with training sample size and quality, the contribution of each strategy can be analyzed by focusing on the relative gain compared to the other methods. Results on the Mutag dataset show that Prototypical Networks excel with simple datasets having clearly separable classes, making the model more robust to outliers. Graph rewiring leads to improvements on citation graphs, suggesting our proposed heuristic benefits the task. In contrast, Cosine regularization yields the greatest performance improvements on coauthorship graphs and the Amazon Computers dataset. Overall, these preliminary findings represent a solid baseline for more advanced models which adapt prior knowledge to the presented tasks.
+
+## Strategies
 
 The primary approaches we investigate can be grouped into five categories:
 
@@ -25,12 +27,14 @@ The primary approaches we investigate can be grouped into five categories:
     - Siamese Network with Triplet Loss
     - Siamese Network with Triplet Loss and Augmentation
 
-## Node Classification
-*Node Classification* consinsts into classify 
+## Examples
+- **Few-shot Node Classification: Coauthor CS**
 
-![alt text](images/nc_citeseer.png)
+![alt text](images/cs.png)
 
-## Graph Classification
+- **Few-shot Graph Classification: Mutag**
+
+![alt text](images/mutag.png)
 
 ## Code organization
 
@@ -81,9 +85,3 @@ Submit the job to a queue system:
 bash launch_docker.sh
 qsub <job_name> 1:00:00 bash launch_queue.sh /absolute/path/to/script/script.py
 ```
-
-## Future improvements
-
-- Adding hyper-parameter tuning on dropout and learing rates.
-- Adding Weight and Biases tracker
-- Adding Logger
